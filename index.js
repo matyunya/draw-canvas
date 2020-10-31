@@ -4,31 +4,26 @@ const button = (onClick) => {
   const b = document.createElement('button');
   b.onclick = onClick;
   b.innerText = 'Clear';
-  
+
   return b;
 }
 
 class DrawingCanvas {
-  constructor(props) {
-  	this.init();
-    
+  constructor(props, { output }) {
+    this.init();
+
     ctx.canvas.height = 112;
     ctx.canvas.width = 112;
     this.button = button(() => this.reset());
-    this.emit = null;
     this.value = false;
-    
+    this.output = output;
+
     ctx.beginPath();
     ctx.rect(0, 0, 112, 112);
     ctx.fillStyle = "black";
     ctx.fill();
-  }
-  
-  async *output() {
-    while (true) {
-      yield this.value;
-      this.value = await new Promise(resolve => this.emit = resolve);
-    }
+    const data = ctx.getImageData(0, 0, 112, 112);
+    output(data);
   }
 
   reset() {
@@ -37,17 +32,17 @@ class DrawingCanvas {
     ctx.fillStyle = "black";
     ctx.fill();
   }
-  
+
   dispose() {
     canvas.parentNode.removeChild(canvas);
     this.button.parentNode.removeChild(this.button);
   }
-  
+
   render(node) {
     node.appendChild(canvas);
     node.appendChild(this.button);
   }
-  
+
   draw(e) {
     // mouse left button must be pressed
     if (e.buttons !== 1) return;
@@ -63,7 +58,7 @@ class DrawingCanvas {
 
     ctx.stroke(); // draw it!
   }
-  
+
   init() {
     canvas = document.createElement('canvas');
     canvas.style.border = '1px solid gray';
@@ -74,21 +69,21 @@ class DrawingCanvas {
 
     document.addEventListener('mousemove', (e) => this.draw(e));
     document.addEventListener('mousedown', (e) => this.setPosition(e));
-    document.addEventListener('mouseenter', (e) => this.setPosition(e)); 
+    document.addEventListener('mouseenter', (e) => this.setPosition(e));
     document.addEventListener('mouseup', () => {
       const data = ctx.getImageData(0, 0, 112, 112);
-      this.emit && this.emit(data);
-    }); 
+      this.output(data);
+    });
   }
-  
+
   setPosition(e) {
-    if (e.pageX || e.pageY) { 
+    if (e.pageX || e.pageY) {
       pos.x = e.pageX;
       pos.y = e.pageY;
-    } else { 
-      pos.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft; 
-      pos.y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop; 
-    } 
+    } else {
+      pos.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+      pos.y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+    }
     pos.x -= canvas.offsetLeft;
     pos.y -= canvas.offsetTop;
   }
